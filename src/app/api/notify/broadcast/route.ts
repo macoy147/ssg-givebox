@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No active subscribers' })
     }
 
-    const emails = subscribers.map(s => s.email)
+    const emails = subscribers.map((s: { email: string }) => s.email)
 
     // Send batch email using Resend
     const response = await fetch('https://api.resend.com/emails/batch', {
