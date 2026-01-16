@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(
-        emails.map(email => ({
+        emails.map((email: string) => ({
           from: 'SSG GiveBox <onboarding@resend.dev>',
           to: email,
           subject: subject || '🆕 New Items Available at SSG GiveBox!',
