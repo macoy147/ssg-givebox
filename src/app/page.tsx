@@ -379,7 +379,7 @@ export default function HomePage() {
             </motion.div>
             <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
               {[{ icon: '📋', title: 'Browse Items', desc: 'Check available items every Thursday when the weekly list is announced.', color: 'from-red-600 to-red-700' },
-                { icon: '🏫', title: 'Visit SSG Office', desc: 'Come to the SSG Office on Friday during pickup hours with your CTU ID.', color: 'from-amber-500 to-yellow-500' },
+                { icon: '🏫', title: 'Visit & Fill Form', desc: 'Come beside the SSG Office on Friday and fill up the claim form with your name, CTU ID, item, and quantity.', color: 'from-amber-500 to-yellow-500' },
                 { icon: '🎁', title: 'Claim Items', desc: 'Get the items you need based on availability. First come, first served!', color: 'from-orange-500 to-red-500' }].map((step, i) => (
                 <motion.div key={i} variants={itemVariants} whileHover={{ y: -5, scale: 1.02 }} className="text-center">
                   <motion.div whileHover={{ scale: 1.1, rotate: 10 }} animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}

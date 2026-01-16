@@ -10,6 +10,8 @@ export function NotifyMe() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,11 +25,9 @@ export function NotifyMe() {
     setStatus('loading')
     setErrorMessage('')
 
-    // Save to database
     const result = await addSubscriber(email)
     
     if (result) {
-      // Send welcome email
       try {
         await fetch('/api/notify', {
           method: 'POST',
@@ -40,7 +40,6 @@ export function NotifyMe() {
 
       setStatus('success')
       setEmail('')
-      // Auto close after 3 seconds
       setTimeout(() => {
         setIsOpen(false)
         setStatus('idle')
@@ -53,18 +52,37 @@ export function NotifyMe() {
 
   return (
     <>
-      {/* Floating Button */}
-      <motion.button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 p-4 rounded-full bg-gradient-to-r from-[var(--accent)] to-pink-500 text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-shadow"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
+      {/* Draggable Floating Button */}
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        dragConstraints={{
+          top: -window?.innerHeight + 100 || -600,
+          left: -window?.innerWidth + 100 || -300,
+          right: 0,
+          bottom: 0
+        }}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={(_, info) => {
+          setPosition({ x: position.x + info.offset.x, y: position.y + info.offset.y })
+          setTimeout(() => setIsDragging(false), 50)
+        }}
+        className="fixed bottom-6 right-6 z-40"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 1, type: 'spring' }}
+        style={{ touchAction: 'none' }}
       >
-        <Bell className="w-6 h-6" />
-      </motion.button>
+        <motion.button
+          onClick={() => !isDragging && setIsOpen(true)}
+          className="p-4 rounded-full bg-gradient-to-r from-[var(--accent)] to-pink-500 text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-shadow cursor-grab active:cursor-grabbing"
+          whileHover={{ scale: isDragging ? 1 : 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Bell className="w-6 h-6" />
+        </motion.button>
+      </motion.div>
 
       {/* Modal */}
       <AnimatePresence>

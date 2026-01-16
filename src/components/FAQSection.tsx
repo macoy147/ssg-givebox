@@ -8,7 +8,7 @@ import { FAQItem } from '@/types'
 const faqs: FAQItem[] = [
   {
     question: "Who can claim items from SSG GiveBox?",
-    answer: "All bonafide students of CTU Daanbantayan Campus can claim items. Just bring your valid CTU ID when you visit the SSG Office."
+    answer: "All bonafide students of CTU Daanbantayan Campus can claim items. You'll need to fill up a claim form with your name, CTU ID, the item you're taking, and the quantity."
   },
   {
     question: "When can I pick up items?",
@@ -23,6 +23,10 @@ const faqs: FAQItem[] = [
     answer: "Items can be claimed beside the SSG Office. Look for the GiveBox sign!"
   },
   {
+    question: "What do I need to bring?",
+    answer: "You don't need to bring anything specific. Just come to the pickup location and fill up the claim form with your name, CTU ID number, the item you want, and the quantity."
+  },
+  {
     question: "How do I know when new items are available?",
     answer: "New items are announced every Thursday. You can check this website, follow our social media, or subscribe to notifications using the bell icon."
   },
@@ -33,10 +37,6 @@ const faqs: FAQItem[] = [
   {
     question: "What happens to unclaimed items?",
     answer: "Unclaimed items remain available for the following weeks. Items that are not claimed after several weeks may be donated to other charitable organizations."
-  },
-  {
-    question: "Is there a limit to how often I can claim items?",
-    answer: "Students can visit every Friday to check available items. We encourage taking only what you need so others can benefit too."
   }
 ]
 
