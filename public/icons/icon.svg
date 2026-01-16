@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC2626"/>
+      <stop offset="50%" style="stop-color:#EA580C"/>
+      <stop offset="100%" style="stop-color:#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#grad)"/>
+  <g fill="white">
+    <!-- Gift box body -->
+    <rect x="120" y="240" width="272" height="180" rx="20"/>
+    <!-- Gift box lid -->
+    <rect x="100" y="180" width="312" height="70" rx="15"/>
+    <!-- Vertical ribbon -->
+    <rect x="236" y="180" width="40" height="240" fill="#DC2626" opacity="0.3"/>
+    <!-- Horizontal ribbon -->
+    <rect x="100" y="200" width="312" height="40" fill="#DC2626" opacity="0.3"/>
+    <!-- Bow -->
+    <ellipse cx="256" cy="160" rx="50" ry="35" fill="white"/>
+    <ellipse cx="206" cy="145" rx="35" ry="25" fill="white"/>
+    <ellipse cx="306" cy="145" rx="35" ry="25" fill="white"/>
+    <circle cx="256" cy="160" r="15" fill="#DC2626"/>
+  </g>
+</svg>
