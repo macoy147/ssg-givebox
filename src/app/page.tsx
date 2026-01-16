@@ -26,6 +26,41 @@ const itemVariants = {
 }
 
 
+// Generate halftone dots pattern for loading screen
+function HalftoneDots({ position }: { position: 'top-left' | 'bottom-right' }) {
+  const dots = []
+  const rows = 10
+  const cols = 10
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const distance = Math.sqrt(row * row + col * col)
+      const maxDistance = Math.sqrt(rows * rows + cols * cols)
+      const sizeMultiplier = 1 - (distance / maxDistance)
+      
+      // Top-left: triangle with hypotenuse going from top-right to bottom-left
+      if (position === 'top-left' && col <= rows - row - 1) {
+        const size = Math.max(2, 10 * sizeMultiplier)
+        const opacity = 0.25 * sizeMultiplier
+        dots.push(
+          <circle key={`${row}-${col}`} cx={col * 22 + 11} cy={row * 22 + 11} r={size} fill="currentColor" opacity={opacity} />
+        )
+      } 
+      // Bottom-right: mirror of top-left, triangle with hypotenuse going from top-right to bottom-left
+      else if (position === 'bottom-right' && col >= rows - row) {
+        const cornerDistance = Math.sqrt((rows - 1 - row) * (rows - 1 - row) + (cols - 1 - col) * (cols - 1 - col))
+        const cornerMultiplier = 1 - (cornerDistance / maxDistance)
+        const size = Math.max(2, 10 * cornerMultiplier)
+        const opacity = 0.25 * cornerMultiplier
+        dots.push(
+          <circle key={`${row}-${col}`} cx={col * 22 + 11} cy={row * 22 + 11} r={size} fill="currentColor" opacity={opacity} />
+        )
+      }
+    }
+  }
+  return <>{dots}</>
+}
+
 function LoadingScreen({ progress }: { progress: number }) {
   const [tip, setTip] = useState(0)
   const tips = [
@@ -47,6 +82,15 @@ function LoadingScreen({ progress }: { progress: number }) {
       transition={{ duration: 0.5 }}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-red-950 via-red-900 to-amber-950"
     >
+      {/* Halftone dots - Top Left */}
+      <svg className="absolute top-0 left-0 w-[220px] h-[220px] text-white" viewBox="0 0 220 220" aria-hidden="true">
+        <HalftoneDots position="top-left" />
+      </svg>
+      
+      {/* Halftone dots - Bottom Right */}
+      <svg className="absolute bottom-0 right-0 w-[220px] h-[220px] text-amber-400" viewBox="0 0 220 220" aria-hidden="true">
+        <HalftoneDots position="bottom-right" />
+      </svg>
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <motion.div

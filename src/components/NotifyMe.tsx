@@ -64,11 +64,6 @@ export function NotifyMe() {
         transition={{ delay: 1, type: 'spring' }}
       >
         <Bell className="w-6 h-6" />
-        <motion.span
-          className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"
-          animate={{ scale: [1, 1.3, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
       </motion.button>
 
       {/* Modal */}
@@ -155,7 +150,7 @@ export function NotifyMe() {
                           Email Address
                         </label>
                         <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] pointer-events-none" />
                           <input
                             type="email"
                             placeholder="your.email@ctu.edu.ph"
@@ -165,7 +160,8 @@ export function NotifyMe() {
                               setStatus('idle')
                               setErrorMessage('')
                             }}
-                            className="input pl-12 w-full"
+                            className="w-full bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-sm transition-all focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                            style={{ padding: '0.75rem 1rem 0.75rem 3rem' }}
                             disabled={status === 'loading'}
                           />
                         </div>

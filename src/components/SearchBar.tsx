@@ -40,7 +40,7 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
       <motion.div
         animate={{
           boxShadow: isFocused 
-            ? '0 0 0 3px var(--accent), 0 10px 40px -10px rgba(0,0,0,0.2)' 
+            ? '0 0 0 2px var(--accent), 0 10px 40px -10px rgba(0,0,0,0.2)' 
             : '0 4px 20px -5px rgba(0,0,0,0.1)'
         }}
         className="relative rounded-2xl overflow-hidden"
@@ -50,7 +50,7 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
         <div className="relative flex items-center">
           <motion.div
             animate={{ scale: isFocused ? 1.1 : 1 }}
-            className="pl-4"
+            className="absolute left-4 pointer-events-none"
           >
             <Search className={`w-5 h-5 transition-colors ${isFocused ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
           </motion.div>
@@ -63,7 +63,7 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            className="w-full py-3.5 px-3 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base"
+            className="w-full py-3.5 pl-12 pr-3 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base"
           />
 
           <AnimatePresence>

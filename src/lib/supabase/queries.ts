@@ -254,7 +254,10 @@ export async function getSettings(): Promise<Record<string, string>> {
 // Subscribers
 export async function addSubscriber(email: string): Promise<Subscriber | null> {
   const supabase = createClient()
-  if (!supabase) return null
+  if (!supabase) {
+    console.error('Supabase client not initialized')
+    return null
+  }
 
   const { data, error } = await supabase
     .from('subscribers')
@@ -263,7 +266,7 @@ export async function addSubscriber(email: string): Promise<Subscriber | null> {
     .single()
 
   if (error) {
-    // Check if already subscribed
+    // Check if already subscribed (unique constraint violation)
     if (error.code === '23505') {
       // Reactivate if exists
       const { data: existing } = await supabase
@@ -274,7 +277,7 @@ export async function addSubscriber(email: string): Promise<Subscriber | null> {
         .single()
       return existing
     }
-    console.error('Error adding subscriber:', error)
+    console.error('Error adding subscriber:', error.message, error.code, error.details)
     return null
   }
 
