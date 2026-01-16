@@ -168,7 +168,7 @@ export default function HomePage() {
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [settings, setSettings] = useState({ pickup_location: 'Beside SSG Office', pickup_day: 'Friday', pickup_time: '8:00 AM - 10:00 PM' })
+  const [settings, setSettings] = useState({ pickup_location: 'Beside SSG Office', pickup_day: 'Friday', pickup_time: '8:00 AM - 9:00 PM' })
 
   useEffect(() => {
     const start = Date.now()

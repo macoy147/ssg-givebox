@@ -12,7 +12,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "When can I pick up items?",
-    answer: "Items are available for pickup every Friday during office hours (usually 8:00 AM - 12:00 PM). Check the announcements for specific times each week."
+    answer: "Items are available for pickup every Friday during office hours (8:00 AM - 9:00 PM). Check the announcements for specific times each week."
   },
   {
     question: "How many items can I claim?",
@@ -20,7 +20,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "Where is the pickup location?",
-    answer: "Items can be claimed at the SSG Office, located on the 2nd Floor of the Admin Building. Look for the GiveBox sign!"
+    answer: "Items can be claimed beside the SSG Office. Look for the GiveBox sign!"
   },
   {
     question: "How do I know when new items are available?",

@@ -224,9 +224,9 @@ export async function getSettings(): Promise<Record<string, string>> {
   const supabase = createClient()
   if (!supabase) {
     return {
-      pickup_location: 'SSG Office',
+      pickup_location: 'Beside SSG Office',
       pickup_day: 'Friday',
-      pickup_time: '8:00 AM - 12:00 PM'
+      pickup_time: '8:00 AM - 9:00 PM'
     }
   }
 
@@ -236,9 +236,9 @@ export async function getSettings(): Promise<Record<string, string>> {
 
   if (error || !data) {
     return {
-      pickup_location: 'SSG Office',
+      pickup_location: 'Beside SSG Office',
       pickup_day: 'Friday',
-      pickup_time: '8:00 AM - 12:00 PM'
+      pickup_time: '8:00 AM - 9:00 PM'
     }
   }
 
