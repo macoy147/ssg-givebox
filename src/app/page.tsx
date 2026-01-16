@@ -45,74 +45,16 @@ function LoadingScreen({ progress }: { progress: number }) {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-red-950 via-red-900 to-amber-950"
     >
-      {/* Base gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-950 via-red-900 to-amber-950" />
-      
-      {/* Radial light burst from center */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse at center, rgba(255,100,50,0.3) 0%, transparent 60%)'
-      }} />
-
-      {/* Animated Comic Halftone Dots - Layer 1 (Large, slow) */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ scale: [1, 1.15, 1], rotate: [0, 3, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(220,38,38,0.4) 2px, transparent 2px)`,
-          backgroundSize: '30px 30px',
-        }}
-      />
-
-      {/* Animated Comic Halftone Dots - Layer 2 (Medium, medium speed) */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ scale: [1.1, 1, 1.1], x: [0, 10, 0], y: [0, -10, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(251,146,60,0.35) 3px, transparent 3px)`,
-          backgroundSize: '45px 45px',
-          backgroundPosition: '15px 15px',
-        }}
-      />
-
-      {/* Animated Comic Halftone Dots - Layer 3 (Small, fast, pulsing) */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)`,
-          backgroundSize: '20px 20px',
-          backgroundPosition: '10px 10px',
-        }}
-      />
-
-      {/* Radial halftone pattern from center (like in the image) */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.6, 0.4] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          background: `radial-gradient(circle at 50% 60%, 
-            rgba(220,38,38,0.5) 0%, 
-            rgba(220,38,38,0.3) 20%, 
-            rgba(220,38,38,0.15) 40%, 
-            transparent 60%)`,
-        }}
-      />
-
-      {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-2 h-2 bg-white/20 rounded-full"
-            style={{ left: `${(i * 7) % 100}%`, top: `${(i * 11) % 100}%` }}
-            animate={{ y: [0, -120], opacity: [0, 0.8, 0], scale: [0.5, 1, 0.5] }}
-            transition={{ duration: 5 + (i % 3), repeat: Infinity, delay: i * 0.3 }}
+            style={{ left: `${(i * 5) % 100}%`, top: `${(i * 7) % 100}%` }}
+            animate={{ y: [0, -150], opacity: [0, 1, 0] }}
+            transition={{ duration: 4 + (i % 3), repeat: Infinity, delay: i * 0.2 }}
           />
         ))}
       </div>
