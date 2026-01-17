@@ -165,13 +165,32 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('Resend error:', error)
-      return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
+      console.error('Resend API error:', error)
+      
+      // Parse error for better messaging
+      let errorMessage = 'Failed to send email'
+      try {
+        const errorData = JSON.parse(error)
+        if (errorData.message) {
+          errorMessage = errorData.message
+        }
+      } catch (e) {
+        // If parsing fails, use the raw error
+        errorMessage = error
+      }
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        details: 'Check if the email is verified in Resend (free tier requires verified recipients)'
+      }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: 'Thank you email sent successfully' })
   } catch (error) {
     console.error('Error sending thank you email:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

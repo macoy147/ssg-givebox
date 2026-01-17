@@ -56,8 +56,11 @@ export default function DonationsPage() {
         })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to send email')
+        console.error('API Error:', data)
+        throw new Error(data.error || 'Failed to send email')
       }
 
       // Update donation record
@@ -68,11 +71,11 @@ export default function DonationsPage() {
       
       if (updated) {
         setDonations(donations.map(d => d.id === donation.id ? { ...d, thank_you_sent: true, thank_you_sent_at: new Date().toISOString() } : d))
-        alert('Thank you email sent successfully!')
+        alert('Thank you email sent successfully! ✅')
       }
     } catch (error) {
       console.error('Error sending thank you email:', error)
-      alert('Failed to send thank you email. Please try again.')
+      alert(`Failed to send thank you email: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`)
     } finally {
       setSendingThankYou(null)
     }
