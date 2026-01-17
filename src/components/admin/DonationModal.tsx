@@ -60,14 +60,21 @@ export function DonationModal({ isOpen, donation, onClose, onSuccess }: Donation
     setIsLoading(true)
     setError('')
 
+    // Validation
+    if (formData.total_items < 1) {
+      setError('Total items must be at least 1')
+      setIsLoading(false)
+      return
+    }
+
     const donationData = {
-      donor_name: formData.donor_name,
-      donor_email: formData.donor_email || null,
-      donor_phone: formData.donor_phone || null,
-      items_donated: formData.items_donated,
-      total_items: formData.total_items,
+      donor_name: formData.donor_name.trim(),
+      donor_email: formData.donor_email.trim() || null,
+      donor_phone: formData.donor_phone.trim() || null,
+      items_donated: formData.items_donated.trim(),
+      total_items: Math.max(1, formData.total_items), // Ensure at least 1
       donation_date: formData.donation_date,
-      notes: formData.notes || null,
+      notes: formData.notes.trim() || null,
       thank_you_sent: formData.thank_you_sent,
       thank_you_sent_at: formData.thank_you_sent ? new Date().toISOString() : null
     }
@@ -85,7 +92,7 @@ export function DonationModal({ isOpen, donation, onClose, onSuccess }: Donation
       onSuccess?.()
       onClose()
     } else {
-      setError('Failed to save donation. Please try again.')
+      setError('Failed to save donation. Please check all fields and try again.')
     }
   }
 
