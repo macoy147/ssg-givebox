@@ -1,29 +1,13 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Camera, 
-  Clock, 
-  Sun, 
-  Moon, 
-  TrendingUp, 
-  TrendingDown, 
-  Minus,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Loader2,
-  CheckCircle,
-  AlertCircle
-} from 'lucide-react'
-import { Item, SnapshotItem, CATEGORY_ICONS, CATEGORY_LABELS } from '@/types'
+import { Camera, Clock, Sun, Moon, TrendingUp, TrendingDown, Minus, Sparkles, ChevronDown, ChevronUp, Loader2, RefreshCw, Bot, ArrowLeftRight } from 'lucide-react'
+import { Item, SnapshotItem, CATEGORY_ICONS } from '@/types'
 
 interface Snapshot {
   id: string
-  time: 'morning' | 'evening'
-  date: string
+  label: string
   items: SnapshotItem[]
   totalItems: number
   totalQuantity: number
@@ -36,353 +20,130 @@ interface SnapshotPanelProps {
 
 export function SnapshotPanel({ items }: SnapshotPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
-  const [isSaving, setIsSaving] = useState(false)
+  const [morningSnap, setMorningSnap] = useState<Snapshot | null>(null)
+  const [nightSnap, setNightSnap] = useState<Snapshot | null>(null)
+  const [isSavingMorning, setIsSavingMorning] = useState(false)
+  const [isSavingNight, setIsSavingNight] = useState(false)
   const [showComparison, setShowComparison] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  // Load snapshots from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('inventory_snapshots')
-    if (saved) {
-      setSnapshots(JSON.parse(saved))
-    }
+    const saved1 = localStorage.getItem('morning_snapshot')
+    const saved2 = localStorage.getItem('night_snapshot')
+    if (saved1) setMorningSnap(JSON.parse(saved1))
+    if (saved2) setNightSnap(JSON.parse(saved2))
   }, [])
 
-  const today = new Date().toISOString().split('T')[0]
-  const currentHour = new Date().getHours()
-  const isMorning = currentHour < 14 // Before 2 PM is morning
-  const currentTimeSlot = isMorning ? 'morning' : 'evening'
-
-  const todayMorningSnapshot = snapshots.find(s => s.date === today && s.time === 'morning')
-  const todayEveningSnapshot = snapshots.find(s => s.date === today && s.time === 'evening')
-  const hasCurrentSnapshot = currentTimeSlot === 'morning' ? todayMorningSnapshot : todayEveningSnapshot
-
-  const saveSnapshot = async () => {
-    setIsSaving(true)
-    
-    // Simulate a brief delay for UX
-    await new Promise(resolve => setTimeout(resolve, 800))
-
+  const createSnapshot = (label: string): Snapshot => {
     const snapshotItems: SnapshotItem[] = items.map(item => ({
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      quantity: item.quantity,
-      status: item.status
+      id: item.id, name: item.name, category: item.category, quantity: item.quantity, status: item.status
     }))
+    return { id: Date.now().toString(), label, items: snapshotItems, totalItems: items.length, totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0), createdAt: new Date().toISOString() }
+  }
 
-    const newSnapshot: Snapshot = {
-      id: `${today}-${currentTimeSlot}`,
-      time: currentTimeSlot,
-      date: today,
-      items: snapshotItems,
-      totalItems: items.length,
-      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      createdAt: new Date().toISOString()
-    }
+  const saveMorningSnap = async () => {
+    setIsSavingMorning(true)
+    await new Promise(r => setTimeout(r, 500))
+    const snap = createSnapshot('Morning')
+    setMorningSnap(snap)
+    localStorage.setItem('morning_snapshot', JSON.stringify(snap))
+    setIsSavingMorning(false)
+    setShowComparison(false)
+    setAiAnalysis(null)
+  }
 
-    // Remove existing snapshot for same time slot if exists
-    const filtered = snapshots.filter(s => !(s.date === today && s.time === currentTimeSlot))
-    const updated = [...filtered, newSnapshot].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-
-    setSnapshots(updated)
-    localStorage.setItem('inventory_snapshots', JSON.stringify(updated))
-    setIsSaving(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
-
-    // Auto-show comparison if both snapshots exist
-    if (currentTimeSlot === 'evening' && todayMorningSnapshot) {
-      setShowComparison(true)
-    }
+  const saveNightSnap = async () => {
+    setIsSavingNight(true)
+    await new Promise(r => setTimeout(r, 500))
+    const snap = createSnapshot('Night')
+    setNightSnap(snap)
+    localStorage.setItem('night_snapshot', JSON.stringify(snap))
+    setIsSavingNight(false)
+    setShowComparison(false)
+    setAiAnalysis(null)
   }
 
   const getComparison = () => {
-    if (!todayMorningSnapshot || !todayEveningSnapshot) return null
-
-    const morningItems = new Map(todayMorningSnapshot.items.map(i => [i.id, i]))
-    const eveningItems = new Map(todayEveningSnapshot.items.map(i => [i.id, i]))
-
-    const added: SnapshotItem[] = []
-    const removed: SnapshotItem[] = []
-    const changed: { item: SnapshotItem; change: number }[] = []
-
-    // Find added and changed items
-    eveningItems.forEach((item, id) => {
-      const morningItem = morningItems.get(id)
-      if (!morningItem) {
-        added.push(item)
-      } else if (morningItem.quantity !== item.quantity) {
-        changed.push({ item, change: item.quantity - morningItem.quantity })
-      }
-    })
-
-    // Find removed items
-    morningItems.forEach((item, id) => {
-      if (!eveningItems.has(id)) {
-        removed.push(item)
-      }
-    })
-
+    if (!morningSnap || !nightSnap) return null
+    const items1 = new Map(morningSnap.items.map(i => [i.id, i]))
+    const items2 = new Map(nightSnap.items.map(i => [i.id, i]))
+    const added: SnapshotItem[] = [], removed: SnapshotItem[] = [], changed: { item: SnapshotItem; change: number }[] = []
+    items2.forEach((item, id) => { const i1 = items1.get(id); if (!i1) added.push(item); else if (i1.quantity !== item.quantity) changed.push({ item, change: item.quantity - i1.quantity }) })
+    items1.forEach((item, id) => { if (!items2.has(id)) removed.push(item) })
     return { added, removed, changed }
   }
 
+  const generateAIAnalysis = async () => {
+    const comp = getComparison()
+    if (!comp || !morningSnap || !nightSnap) return
+    setIsAnalyzing(true)
+    setAiAnalysis(null)
+    try {
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }), morningTotal: morningSnap.totalItems, eveningTotal: nightSnap.totalItems, morningQuantity: morningSnap.totalQuantity, eveningQuantity: nightSnap.totalQuantity, added: comp.added, removed: comp.removed, changed: comp.changed }) })
+      const data = await res.json()
+      setAiAnalysis(data.error ? 'Unable to generate AI analysis.' : data.analysis)
+    } catch (e) { console.error(e); setAiAnalysis('Failed to connect to AI service.') }
+    finally { setIsAnalyzing(false) }
+  }
+
   const comparison = getComparison()
+  const formatTime = (d: string) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
 
   return (
     <div className="card overflow-hidden">
-      {/* Header - Always visible */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-[var(--bg-tertiary)] transition-colors"
-      >
+      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full p-4 flex items-center justify-between hover:bg-[var(--bg-tertiary)] transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
-            <Camera className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-left">
-            <h3 className="font-semibold text-[var(--text-primary)]">Daily Snapshot</h3>
-            <p className="text-xs text-[var(--text-muted)]">Save & compare inventory</p>
-          </div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg"><Camera className="w-5 h-5 text-white" /></div>
+          <div className="text-left"><h3 className="font-semibold text-[var(--text-primary)]">Inventory Snapshots</h3><p className="text-xs text-[var(--text-muted)]">Compare morning and night</p></div>
         </div>
         <div className="flex items-center gap-2">
-          {todayMorningSnapshot && (
-            <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-medium flex items-center gap-1">
-              <Sun className="w-3 h-3" /> AM
-            </span>
-          )}
-          {todayEveningSnapshot && (
-            <span className="px-2 py-1 rounded-full bg-indigo-500/10 text-indigo-500 text-xs font-medium flex items-center gap-1">
-              <Moon className="w-3 h-3" /> PM
-            </span>
-          )}
+          {morningSnap && <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-medium flex items-center gap-1"><Sun className="w-3 h-3" />AM</span>}
+          {nightSnap && <span className="px-2 py-1 rounded-full bg-indigo-500/10 text-indigo-500 text-xs font-medium flex items-center gap-1"><Moon className="w-3 h-3" />PM</span>}
           {isExpanded ? <ChevronUp className="w-5 h-5 text-[var(--text-muted)]" /> : <ChevronDown className="w-5 h-5 text-[var(--text-muted)]" />}
         </div>
       </button>
-
-      {/* Expanded Content */}
       <AnimatePresence>
         {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="p-4 pt-0 space-y-4">
-              {/* Current Status */}
-              <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[var(--text-muted)]" />
-                    <span className="text-sm text-[var(--text-secondary)]">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                    isMorning ? 'bg-amber-500/10 text-amber-500' : 'bg-indigo-500/10 text-indigo-500'
-                  }`}>
-                    {isMorning ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-                    {isMorning ? 'Morning Session' : 'Evening Session'}
-                  </span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] border border-amber-500/20">
+                  <div className="flex items-center gap-2 mb-3"><Sun className="w-4 h-4 text-amber-500" /><span className="text-sm font-semibold text-amber-500">Morning Snap</span></div>
+                  {morningSnap ? (<div className="space-y-3"><p className="text-xs text-[var(--text-muted)]">{formatTime(morningSnap.createdAt)}</p><div className="grid grid-cols-2 gap-2"><div className="text-center p-2 rounded-lg bg-[var(--bg-primary)]"><p className="text-xl font-bold text-[var(--text-primary)]">{morningSnap.totalItems}</p><p className="text-xs text-[var(--text-muted)]">Items</p></div><div className="text-center p-2 rounded-lg bg-[var(--bg-primary)]"><p className="text-xl font-bold text-[var(--text-primary)]">{morningSnap.totalQuantity}</p><p className="text-xs text-[var(--text-muted)]">Qty</p></div></div><button onClick={saveMorningSnap} disabled={isSavingMorning} className="w-full py-2 rounded-lg bg-amber-500/20 text-amber-500 text-sm font-medium hover:bg-amber-500/30 flex items-center justify-center gap-2">{isSavingMorning ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Update</button></div>) : (<button onClick={saveMorningSnap} disabled={isSavingMorning} className="w-full py-10 rounded-lg border-2 border-dashed border-amber-500/30 text-amber-500 hover:bg-amber-500/10 flex flex-col items-center justify-center gap-2">{isSavingMorning ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Camera className="w-6 h-6" /><span className="text-sm font-medium">Take Snapshot</span></>}</button>)}
                 </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="text-center p-3 rounded-lg bg-[var(--bg-primary)]">
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">{items.length}</p>
-                    <p className="text-xs text-[var(--text-muted)]">Items</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-[var(--bg-primary)]">
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">
-                      {items.reduce((sum, item) => sum + item.quantity, 0)}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)]">Total Qty</p>
-                  </div>
+                <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] border border-indigo-500/20">
+                  <div className="flex items-center gap-2 mb-3"><Moon className="w-4 h-4 text-indigo-500" /><span className="text-sm font-semibold text-indigo-500">Night Snap</span></div>
+                  {nightSnap ? (<div className="space-y-3"><p className="text-xs text-[var(--text-muted)]">{formatTime(nightSnap.createdAt)}</p><div className="grid grid-cols-2 gap-2"><div className="text-center p-2 rounded-lg bg-[var(--bg-primary)]"><p className="text-xl font-bold text-[var(--text-primary)]">{nightSnap.totalItems}</p><p className="text-xs text-[var(--text-muted)]">Items</p></div><div className="text-center p-2 rounded-lg bg-[var(--bg-primary)]"><p className="text-xl font-bold text-[var(--text-primary)]">{nightSnap.totalQuantity}</p><p className="text-xs text-[var(--text-muted)]">Qty</p></div></div><button onClick={saveNightSnap} disabled={isSavingNight} className="w-full py-2 rounded-lg bg-indigo-500/20 text-indigo-500 text-sm font-medium hover:bg-indigo-500/30 flex items-center justify-center gap-2">{isSavingNight ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Update</button></div>) : (<button onClick={saveNightSnap} disabled={isSavingNight} className="w-full py-10 rounded-lg border-2 border-dashed border-indigo-500/30 text-indigo-500 hover:bg-indigo-500/10 flex flex-col items-center justify-center gap-2">{isSavingNight ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Camera className="w-6 h-6" /><span className="text-sm font-medium">Take Snapshot</span></>}</button>)}
                 </div>
-
-                {/* Save Button */}
-                <button
-                  onClick={saveSnapshot}
-                  disabled={isSaving}
-                  className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                    saveSuccess 
-                      ? 'bg-[var(--success)] text-white'
-                      : hasCurrentSnapshot
-                      ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
-                      : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
-                  }`}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Saving Snapshot...
-                    </>
-                  ) : saveSuccess ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      Snapshot Saved!
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-5 h-5" />
-                      {hasCurrentSnapshot ? 'Update Snapshot' : 'Save Snapshot'}
-                    </>
-                  )}
-                </button>
-
-                {hasCurrentSnapshot && (
-                  <p className="text-xs text-center text-[var(--text-muted)] mt-2">
-                    Last saved: {new Date(hasCurrentSnapshot.createdAt).toLocaleTimeString()}
-                  </p>
-                )}
               </div>
-
-              {/* Comparison Section */}
-              {todayMorningSnapshot && todayEveningSnapshot && comparison && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowComparison(!showComparison)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-purple-500" />
-                      <span className="font-medium text-[var(--text-primary)]">View Daily Report</span>
+              <div className="p-3 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border)]"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><Clock className="w-4 h-4 text-[var(--text-muted)]" /><span className="text-sm text-[var(--text-secondary)]">Current</span></div><span className="text-sm text-[var(--text-primary)] font-medium">{items.length} items - {items.reduce((s, i) => s + i.quantity, 0)} qty</span></div></div>
+              {morningSnap && nightSnap && <button onClick={() => setShowComparison(!showComparison)} className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-purple-500/25"><ArrowLeftRight className="w-5 h-5" /> Compare</button>}
+              <AnimatePresence>
+                {showComparison && comparison && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-3 overflow-hidden">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center"><TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-1" /><p className="text-lg font-bold text-green-500">{comparison.added.length}</p><p className="text-xs text-[var(--text-muted)]">Added</p></div>
+                      <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center"><TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-1" /><p className="text-lg font-bold text-red-500">{comparison.removed.length}</p><p className="text-xs text-[var(--text-muted)]">Removed</p></div>
+                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center"><Minus className="w-5 h-5 text-amber-500 mx-auto mb-1" /><p className="text-lg font-bold text-amber-500">{comparison.changed.length}</p><p className="text-xs text-[var(--text-muted)]">Changed</p></div>
                     </div>
-                    <span className="text-xs text-purple-500 font-medium">
-                      {comparison.added.length + comparison.removed.length + comparison.changed.length} changes
-                    </span>
-                  </button>
-
-                  <AnimatePresence>
-                    {showComparison && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="space-y-3 overflow-hidden"
-                      >
-                        {/* Summary Stats */}
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
-                            <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-green-500">{comparison.added.length}</p>
-                            <p className="text-xs text-[var(--text-muted)]">Added</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-                            <TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-red-500">{comparison.removed.length}</p>
-                            <p className="text-xs text-[var(--text-muted)]">Removed</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                            <Minus className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-amber-500">{comparison.changed.length}</p>
-                            <p className="text-xs text-[var(--text-muted)]">Changed</p>
-                          </div>
+                    {comparison.added.length > 0 && <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]"><h4 className="text-sm font-semibold text-green-500 mb-2 flex items-center gap-1"><TrendingUp className="w-4 h-4" /> Added</h4>{comparison.added.map(item => <div key={item.id} className="flex justify-between text-sm"><span className="text-[var(--text-secondary)]">{CATEGORY_ICONS[item.category]} {item.name}</span><span className="text-green-500 font-medium">+{item.quantity}</span></div>)}</div>}
+                    {comparison.removed.length > 0 && <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]"><h4 className="text-sm font-semibold text-red-500 mb-2 flex items-center gap-1"><TrendingDown className="w-4 h-4" /> Removed</h4>{comparison.removed.map(item => <div key={item.id} className="flex justify-between text-sm"><span className="text-[var(--text-secondary)]">{CATEGORY_ICONS[item.category]} {item.name}</span><span className="text-red-500 font-medium">-{item.quantity}</span></div>)}</div>}
+                    {comparison.changed.length > 0 && <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]"><h4 className="text-sm font-semibold text-amber-500 mb-2 flex items-center gap-1"><Minus className="w-4 h-4" /> Changed</h4>{comparison.changed.map(({ item, change }) => <div key={item.id} className="flex justify-between text-sm"><span className="text-[var(--text-secondary)]">{CATEGORY_ICONS[item.category]} {item.name}</span><span className={change > 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}>{change > 0 ? '+' : ''}{change}</span></div>)}</div>}
+                    {comparison.added.length === 0 && comparison.removed.length === 0 && comparison.changed.length === 0 && <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] text-center"><p className="text-sm text-[var(--text-muted)]">No changes detected</p></div>}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/5 to-pink-500/5 border border-purple-500/20">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"><Bot className="w-4 h-4 text-white" /></div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-[var(--text-primary)] mb-1">AI Analysis</h4>
+                          {aiAnalysis ? <p className="text-sm text-[var(--text-secondary)] whitespace-pre-line">{aiAnalysis}</p> : <p className="text-sm text-[var(--text-muted)]">Generate AI analysis of changes.</p>}
+                          <button onClick={generateAIAnalysis} disabled={isAnalyzing} className="mt-3 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium hover:shadow-lg disabled:opacity-50 flex items-center gap-2">{isAnalyzing ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> {aiAnalysis ? 'Regenerate' : 'Generate'}</>}</button>
                         </div>
-
-                        {/* Detailed Changes */}
-                        {comparison.added.length > 0 && (
-                          <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]">
-                            <h4 className="text-sm font-semibold text-green-500 mb-2 flex items-center gap-1">
-                              <TrendingUp className="w-4 h-4" /> Items Added
-                            </h4>
-                            <div className="space-y-1">
-                              {comparison.added.map(item => (
-                                <div key={item.id} className="flex items-center justify-between text-sm">
-                                  <span className="text-[var(--text-secondary)]">
-                                    {CATEGORY_ICONS[item.category]} {item.name}
-                                  </span>
-                                  <span className="text-green-500 font-medium">+{item.quantity}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {comparison.removed.length > 0 && (
-                          <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]">
-                            <h4 className="text-sm font-semibold text-red-500 mb-2 flex items-center gap-1">
-                              <TrendingDown className="w-4 h-4" /> Items Removed/Claimed
-                            </h4>
-                            <div className="space-y-1">
-                              {comparison.removed.map(item => (
-                                <div key={item.id} className="flex items-center justify-between text-sm">
-                                  <span className="text-[var(--text-secondary)]">
-                                    {CATEGORY_ICONS[item.category]} {item.name}
-                                  </span>
-                                  <span className="text-red-500 font-medium">-{item.quantity}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {comparison.changed.length > 0 && (
-                          <div className="p-3 rounded-xl bg-[var(--bg-tertiary)]">
-                            <h4 className="text-sm font-semibold text-amber-500 mb-2 flex items-center gap-1">
-                              <Minus className="w-4 h-4" /> Quantity Changes
-                            </h4>
-                            <div className="space-y-1">
-                              {comparison.changed.map(({ item, change }) => (
-                                <div key={item.id} className="flex items-center justify-between text-sm">
-                                  <span className="text-[var(--text-secondary)]">
-                                    {CATEGORY_ICONS[item.category]} {item.name}
-                                  </span>
-                                  <span className={`font-medium ${change > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {change > 0 ? '+' : ''}{change}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* AI Analysis Placeholder */}
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/5 to-pink-500/5 border border-purple-500/20">
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                              <Sparkles className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-[var(--text-primary)] mb-1">AI Analysis</h4>
-                              <p className="text-sm text-[var(--text-secondary)]">
-                                {comparison.removed.length > 0 
-                                  ? `Great distribution day! ${comparison.removed.length} item type(s) were claimed by students. ${
-                                      comparison.removed.reduce((sum, i) => sum + i.quantity, 0)
-                                    } total items distributed.`
-                                  : comparison.added.length > 0
-                                  ? `${comparison.added.length} new item(s) added to inventory today. Ready for distribution!`
-                                  : 'No significant changes detected today.'
-                                }
-                              </p>
-                              <button className="mt-2 text-xs text-purple-500 font-medium hover:underline flex items-center gap-1">
-                                <FileText className="w-3 h-3" /> Generate Full Report
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
-              {/* No comparison available yet */}
-              {(!todayMorningSnapshot || !todayEveningSnapshot) && (
-                <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] border border-dashed border-[var(--border)] text-center">
-                  <AlertCircle className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {!todayMorningSnapshot 
-                      ? 'Save a morning snapshot to start tracking'
-                      : 'Save an evening snapshot to see the comparison'
-                    }
-                  </p>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GROQ_API_KEY = process.env.GROQ_API_KEY
 
 interface SnapshotItem {
   id: string
@@ -23,8 +24,8 @@ interface ComparisonData {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
+    if (!GEMINI_API_KEY && !GROQ_API_KEY) {
+      return NextResponse.json({ error: 'No AI API key configured' }, { status: 500 })
     }
 
     const data: ComparisonData = await request.json()
@@ -58,31 +59,71 @@ Please provide:
 
 Keep the response concise, friendly, and helpful. Use emojis sparingly. Response should be under 150 words.`
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 300,
+    // Try Gemini first
+    if (GEMINI_API_KEY) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 300,
+              }
+            })
           }
-        })
-      }
-    )
+        )
 
-    if (!response.ok) {
-      const error = await response.text()
-      console.error('Gemini API error:', error)
-      return NextResponse.json({ error: 'AI service unavailable' }, { status: 500 })
+        if (response.ok) {
+          const result = await response.json()
+          const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text
+          if (analysis) {
+            return NextResponse.json({ analysis, provider: 'Gemini' })
+          }
+        }
+        console.log('Gemini failed, falling back to Groq')
+      } catch (error) {
+        console.error('Gemini error:', error)
+      }
     }
 
-    const result = await response.json()
-    const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate analysis.'
+    // Fallback to Groq
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+              max_tokens: 300,
+            })
+          }
+        )
 
-    return NextResponse.json({ analysis })
+        if (response.ok) {
+          const result = await response.json()
+          const analysis = result.choices?.[0]?.message?.content
+          if (analysis) {
+            return NextResponse.json({ analysis, provider: 'Groq' })
+          }
+        }
+        console.error('Groq failed:', await response.text())
+      } catch (error) {
+        console.error('Groq error:', error)
+      }
+    }
+
+    return NextResponse.json({ error: 'All AI services unavailable' }, { status: 500 })
   } catch (error) {
     console.error('Analysis error:', error)
     return NextResponse.json({ error: 'Failed to analyze data' }, { status: 500 })
