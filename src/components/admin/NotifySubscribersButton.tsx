@@ -40,11 +40,11 @@ export function NotifySubscribersButton({ itemCount }: NotifySubscribersButtonPr
         }, 3000)
       } else {
         setStatus('error')
-        setMessage(data.error || 'Failed to send notifications')
+        setMessage(data.error || 'Email service temporarily unavailable. Please try again later or notify subscribers manually via email.')
       }
     } catch (error) {
       setStatus('error')
-      setMessage('Failed to send notifications')
+      setMessage('Unable to connect to email service. Please check your internet connection and try again.')
     }
   }
 

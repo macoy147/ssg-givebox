@@ -36,7 +36,7 @@ export default function DonationsPage() {
 
   const handleMarkThankYou = async (donation: Donation) => {
     if (!donation.donor_email) {
-      alert('❌ No email address provided for this donor.\n\nPlease edit the donation to add an email address.')
+      alert('❌ No Email Address\n\nThis donor doesn\'t have an email address on file.\n\n💡 Solution: Edit the donation and add their email address first.')
       return
     }
 
@@ -96,7 +96,7 @@ export default function DonationsPage() {
       }
     } catch (error) {
       console.error('Error updating donation:', error)
-      alert('❌ Failed to update donation record. Please try again.')
+      alert('❌ Update Failed\n\nCouldn\'t update the donation record in the database.\n\n💡 Solution: Check your internet connection and try again.')
     } finally {
       setSendingThankYou(null)
     }

@@ -350,7 +350,15 @@ export default function HomePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
             <div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-1">Available Items</h2>
-              <p className="text-[var(--text-secondary)] text-sm sm:text-base">{filteredItems.length} items ready for pickup</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-[var(--text-secondary)] text-sm sm:text-base">{filteredItems.length} items ready for pickup</p>
+                {filteredItems.length > 0 && filteredItems.length <= 10 && (
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium flex items-center gap-1">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                    Only {filteredItems.length} left!
+                  </span>
+                )}
+              </div>
             </div>
           </motion.div>
           
@@ -410,7 +418,15 @@ export default function HomePage() {
                     <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors text-sm sm:text-base">{item.name}</h3>
-                        <motion.span animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className="flex-shrink-0 px-2 py-1 rounded-full bg-[var(--success)]/10 text-[var(--success)] text-xs font-medium">Available</motion.span>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {/* Recently Added Badge (within 7 days) */}
+                          {new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+                            <span className="px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 text-pink-600 text-xs font-medium border border-pink-500/20">
+                              New!
+                            </span>
+                          )}
+                          <motion.span animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className="flex-shrink-0 px-2 py-1 rounded-full bg-[var(--success)]/10 text-[var(--success)] text-xs font-medium">Available</motion.span>
+                        </div>
                       </div>
                       {item.description && <p className="text-xs sm:text-sm text-[var(--text-secondary)] mb-3 sm:mb-4 line-clamp-2">{item.description}</p>}
                       <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-[var(--border)]">
