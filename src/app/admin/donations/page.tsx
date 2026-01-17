@@ -36,31 +36,31 @@ export default function DonationsPage() {
 
   const handleMarkThankYou = async (donation: Donation) => {
     if (!donation.donor_email) {
-      alert('No email address provided for this donor.')
+      alert('❌ No email address provided for this donor.\n\nPlease edit the donation to add an email address.')
       return
     }
 
+    // Show confirmation with email details
+    const confirmed = confirm(
+      `📧 Send Thank You Email\n\n` +
+      `Donor: ${donation.donor_name}\n` +
+      `Email: ${donation.donor_email}\n` +
+      `Items: ${donation.items_donated}\n` +
+      `Total: ${donation.total_items} items\n\n` +
+      `Click OK to copy the email address and mark as thanked.\n` +
+      `You can then send a thank you email manually from your Gmail.`
+    )
+
+    if (!confirmed) return
+
     setSendingThankYou(donation.id)
 
-    // Send thank you email
     try {
-      const response = await fetch('/api/thank-donor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: donation.donor_email,
-          donorName: donation.donor_name,
-          itemsDonated: donation.items_donated,
-          totalItems: donation.total_items,
-          donationDate: donation.donation_date
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.error('API Error:', data)
-        throw new Error(data.error || 'Failed to send email')
+      // Copy email to clipboard
+      try {
+        await navigator.clipboard.writeText(donation.donor_email)
+      } catch (e) {
+        console.log('Could not copy to clipboard:', e)
       }
 
       // Update donation record
@@ -71,11 +71,32 @@ export default function DonationsPage() {
       
       if (updated) {
         setDonations(donations.map(d => d.id === donation.id ? { ...d, thank_you_sent: true, thank_you_sent_at: new Date().toISOString() } : d))
-        alert('Thank you email sent successfully! ✅')
+        
+        // Show success message with email template
+        alert(
+          `✅ Marked as Thanked!\n\n` +
+          `📋 Email copied to clipboard: ${donation.donor_email}\n\n` +
+          `💡 Next steps:\n` +
+          `1. Open your Gmail\n` +
+          `2. Compose new email\n` +
+          `3. Paste the email address (${donation.donor_email})\n` +
+          `4. Subject: "💝 Thank You for Your Generous Donation - SSG GiveBox"\n` +
+          `5. Write a heartfelt thank you message mentioning:\n` +
+          `   - Their donation of ${donation.items_donated}\n` +
+          `   - How it will help fellow students\n` +
+          `   - Your appreciation on behalf of SSG\n\n` +
+          `Template:\n` +
+          `"Dear ${donation.donor_name},\n\n` +
+          `On behalf of the Supreme Student Government of CTU Daanbantayan Campus, we extend our deepest gratitude for your generous donation of ${donation.items_donated} to the SSG GiveBox program.\n\n` +
+          `Your contribution will directly help fellow students in need. Thank you for making a difference!\n\n` +
+          `With sincere appreciation,\n` +
+          `The Supreme Student Government\n` +
+          `CTU Daanbantayan Campus"`
+        )
       }
     } catch (error) {
-      console.error('Error sending thank you email:', error)
-      alert(`Failed to send thank you email: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`)
+      console.error('Error updating donation:', error)
+      alert('❌ Failed to update donation record. Please try again.')
     } finally {
       setSendingThankYou(null)
     }

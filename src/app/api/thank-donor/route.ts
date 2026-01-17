@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as brevo from '@getbrevo/brevo'
+import nodemailer from 'nodemailer'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ssg-givebox.vercel.app'
 const LOGO_URL = `${APP_URL}/ssg-logo.png`
@@ -16,11 +16,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const BREVO_API_KEY = process.env.BREVO_API_KEY
+    const GMAIL_USER = process.env.GMAIL_USER
+    const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD
 
-    if (!BREVO_API_KEY) {
-      console.log('BREVO_API_KEY not configured - email would be sent to:', email)
-      return NextResponse.json({ success: true, message: 'Thank you recorded' })
+    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+      console.log('Gmail credentials not configured - email would be sent to:', email)
+      return NextResponse.json({ success: true, message: 'Thank you recorded (email not configured)' })
     }
 
     const formattedDate = new Date(donationDate).toLocaleDateString('en-US', {
@@ -29,18 +30,16 @@ export async function POST(request: NextRequest) {
       year: 'numeric'
     })
 
-    // Initialize Brevo API
-    const apiInstance = new brevo.TransactionalEmailsApi()
-    apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY)
+    // Create transporter using Gmail
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD
+      }
+    })
 
-    const sendSmtpEmail = new brevo.SendSmtpEmail()
-    sendSmtpEmail.subject = '💝 Thank You for Your Generous Donation - SSG GiveBox'
-    sendSmtpEmail.to = [{ email: email, name: donorName }]
-    sendSmtpEmail.sender = { 
-      name: 'SSG GiveBox', 
-      email: process.env.BREVO_SENDER_EMAIL || 'marcocomontellano147@gmail.com' 
-    }
-    sendSmtpEmail.htmlContent = `
+    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -163,8 +162,13 @@ export async function POST(request: NextRequest) {
 </html>
     `
 
-    // Send email using Brevo
-    await apiInstance.sendTransacEmail(sendSmtpEmail)
+    // Send email
+    await transporter.sendMail({
+      from: `"SSG GiveBox" <${GMAIL_USER}>`,
+      to: email,
+      subject: '💝 Thank You for Your Generous Donation - SSG GiveBox',
+      html: htmlContent
+    })
 
     return NextResponse.json({ success: true, message: 'Thank you email sent successfully' })
   } catch (error) {
