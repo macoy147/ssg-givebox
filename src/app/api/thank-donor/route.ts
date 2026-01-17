@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as brevo from '@getbrevo/brevo'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ssg-givebox.vercel.app'
 const LOGO_URL = `${APP_URL}/ssg-logo.png`
@@ -15,10 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY
+    const BREVO_API_KEY = process.env.BREVO_API_KEY
 
-    if (!RESEND_API_KEY) {
-      console.log('RESEND_API_KEY not configured - email would be sent to:', email)
+    if (!BREVO_API_KEY) {
+      console.log('BREVO_API_KEY not configured - email would be sent to:', email)
       return NextResponse.json({ success: true, message: 'Thank you recorded' })
     }
 
@@ -28,17 +29,18 @@ export async function POST(request: NextRequest) {
       year: 'numeric'
     })
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'SSG GiveBox <onboarding@resend.dev>',
-        to: email,
-        subject: '💝 Thank You for Your Generous Donation - SSG GiveBox',
-        html: `
+    // Initialize Brevo API
+    const apiInstance = new brevo.TransactionalEmailsApi()
+    apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY)
+
+    const sendSmtpEmail = new brevo.SendSmtpEmail()
+    sendSmtpEmail.subject = '💝 Thank You for Your Generous Donation - SSG GiveBox'
+    sendSmtpEmail.to = [{ email: email, name: donorName }]
+    sendSmtpEmail.sender = { 
+      name: 'SSG GiveBox', 
+      email: process.env.BREVO_SENDER_EMAIL || 'marcocomontellano147@gmail.com' 
+    }
+    sendSmtpEmail.htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -159,37 +161,16 @@ export async function POST(request: NextRequest) {
   </table>
 </body>
 </html>
-        `,
-      }),
-    })
+    `
 
-    if (!response.ok) {
-      const error = await response.text()
-      console.error('Resend API error:', error)
-      
-      // Parse error for better messaging
-      let errorMessage = 'Failed to send email'
-      try {
-        const errorData = JSON.parse(error)
-        if (errorData.message) {
-          errorMessage = errorData.message
-        }
-      } catch (e) {
-        // If parsing fails, use the raw error
-        errorMessage = error
-      }
-      
-      return NextResponse.json({ 
-        error: errorMessage,
-        details: 'Check if the email is verified in Resend (free tier requires verified recipients)'
-      }, { status: 500 })
-    }
+    // Send email using Brevo
+    await apiInstance.sendTransacEmail(sendSmtpEmail)
 
     return NextResponse.json({ success: true, message: 'Thank you email sent successfully' })
   } catch (error) {
     console.error('Error sending thank you email:', error)
     return NextResponse.json({ 
-      error: 'Internal server error',
+      error: 'Failed to send email',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
