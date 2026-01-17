@@ -395,15 +395,19 @@ export async function bulkDeleteItems(ids: string[]): Promise<boolean> {
   const supabase = createClient()
   if (!supabase) return false
 
-  const { error } = await supabase
+  console.log('Deleting items with IDs:', ids)
+
+  const { error, count } = await supabase
     .from('items')
     .delete()
     .in('id', ids)
+    .select()
 
   if (error) {
     console.error('Error bulk deleting items:', error)
     return false
   }
 
+  console.log('Successfully deleted items, count:', count)
   return true
 }

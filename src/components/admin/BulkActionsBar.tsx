@@ -43,13 +43,23 @@ export function BulkActionsBar({ selectedIds, onClearSelection, onActionComplete
   const handleBulkDelete = async () => {
     setIsLoading(true)
     setAction('delete')
-    const success = await bulkDeleteItems(selectedIds)
+    
+    // Store the IDs before clearing
+    const idsToDelete = [...selectedIds]
+    console.log('Attempting to delete items:', idsToDelete)
+    
+    const success = await bulkDeleteItems(idsToDelete)
+    
     setIsLoading(false)
     setAction(null)
     setShowDeleteConfirm(false)
+    
     if (success) {
-      onActionComplete()
       onClearSelection()
+      // Small delay to ensure state is cleared before refresh
+      setTimeout(() => {
+        onActionComplete()
+      }, 100)
     }
   }
 

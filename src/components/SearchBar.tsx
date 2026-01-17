@@ -39,11 +39,13 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
     >
       <motion.div
         animate={{
+          width: isFocused ? '100%' : '90%',
           boxShadow: isFocused 
             ? '0 0 0 2px var(--accent), 0 10px 40px -10px rgba(0,0,0,0.2)' 
             : '0 4px 20px -5px rgba(0,0,0,0.1)'
         }}
-        className="relative rounded-2xl overflow-hidden"
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="relative rounded-2xl overflow-hidden mx-auto"
       >
         <div className="absolute inset-0 bg-[var(--bg-primary)] border border-[var(--border)] rounded-2xl" />
         
@@ -63,7 +65,10 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            className="w-full py-3.5 pl-12 pr-3 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base"
+            className="w-full py-3.5 pl-12 pr-20 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base transition-all duration-300"
+            style={{
+              paddingRight: value ? '3rem' : isFocused ? '1rem' : '5rem'
+            }}
           />
 
           <AnimatePresence>
