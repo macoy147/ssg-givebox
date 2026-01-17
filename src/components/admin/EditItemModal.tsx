@@ -265,14 +265,36 @@ export function EditItemModal({ item, onClose, onSuccess }: EditItemModalProps) 
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
                   Quantity <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                  required
-                  className="input"
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                    required
+                    className="input pr-8 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, quantity: formData.quantity + 1 })}
+                      className="p-0.5 hover:bg-[var(--bg-tertiary)] rounded transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-[var(--text-muted)]">
+                        <path d="M6 3 L9 7 L3 7 Z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, quantity: Math.max(1, formData.quantity - 1) })}
+                      className="p-0.5 hover:bg-[var(--bg-tertiary)] rounded transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-[var(--text-muted)]">
+                        <path d="M6 9 L9 5 L3 5 Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -65,10 +65,7 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            className="w-full py-3.5 pl-12 pr-20 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base transition-all duration-300"
-            style={{
-              paddingRight: value ? '3rem' : isFocused ? '1rem' : '5rem'
-            }}
+            className="w-full py-3.5 pl-12 pr-12 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none text-sm sm:text-base transition-all duration-300"
           />
 
           <AnimatePresence>
@@ -78,7 +75,7 @@ export function SearchBar({ value, onChange, placeholder = "Search items..." }: 
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={() => onChange('')}
-                className="p-2 mr-2 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] transition-colors"
+                className="absolute right-3 p-1.5 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] transition-colors"
               >
                 <X className="w-4 h-4" />
               </motion.button>

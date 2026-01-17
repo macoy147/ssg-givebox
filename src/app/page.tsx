@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -169,6 +169,10 @@ export default function HomePage() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [settings, setSettings] = useState({ pickup_location: 'Beside SSG Office', pickup_day: 'Friday', pickup_time: '8:00 AM - 9:00 PM' })
+  const [itemsToShow, setItemsToShow] = useState(12)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid')
+  const itemsSectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const start = Date.now()
@@ -180,12 +184,20 @@ export default function HomePage() {
         ])
         setItems(itemsData)
         setAnnouncements(announcementsData)
-        setSettings({ pickup_location: settingsData.pickup_location || 'Beside SSG Office', pickup_day: settingsData.pickup_day || 'Friday', pickup_time: settingsData.pickup_time || '8:00 AM - 10:00 PM' })
+        setSettings({ pickup_location: settingsData.pickup_location || 'Beside SSG Office', pickup_day: settingsData.pickup_day || 'Friday', pickup_time: settingsData.pickup_time || '8:00 AM - 9:00 PM' })
       } catch (e) { console.error(e) }
       finally { clearInterval(interval); setProgress(100); setTimeout(() => { setLoading(false); setShowContent(true) }, 500) }
     }
     fetchData()
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 500)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const filteredItems = items.filter(item => {
@@ -195,6 +207,26 @@ export default function HomePage() {
       (item.description?.toLowerCase().includes(searchQuery.toLowerCase()))
     return matchesCategory && matchesSearch
   })
+
+  const displayedItems = filteredItems.slice(0, itemsToShow)
+  const hasMore = filteredItems.length > itemsToShow
+
+  const scrollToItems = () => {
+    itemsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const scrollToTop = () => {
+    scrollToItems()
+  }
+
+  const loadMore = () => {
+    setItemsToShow(prev => prev + 12)
+  }
+
+  const showLess = () => {
+    setItemsToShow(12)
+    setTimeout(() => scrollToItems(), 100)
+  }
 
 
   return (
@@ -219,17 +251,31 @@ export default function HomePage() {
 
         <section className="pt-28 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-7xl mx-auto relative">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }} className="text-center flex flex-col items-center">
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={showContent ? { scale: 1, opacity: 1 } : {}} transition={{ delay: 0.2, type: 'spring' }} className="mb-6 relative">
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} className="relative">
-                  <motion.div className="absolute -inset-3 sm:-inset-5 rounded-full border-2 border-amber-500/60" animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} />
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={showContent ? { opacity: 1, y: 0 } : {}} 
+              transition={{ duration: 0.5, ease: "easeOut" }} 
+              className="text-center flex flex-col items-center"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }} 
+                animate={showContent ? { scale: 1, opacity: 1 } : {}} 
+                transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }} 
+                className="mb-6 relative"
+              >
+                <div className="relative">
+                  <div className="absolute -inset-3 sm:-inset-5 rounded-full border-2 border-amber-500/60" style={{ animation: 'spin 10s linear infinite' }} />
                   <Image src="/ssg-logo.png" alt="SSG Logo" width={90} height={90} className="rounded-full relative z-10 sm:w-[120px] sm:h-[120px]" priority />
-                </motion.div>
+                </div>
                 <div className="absolute inset-0 rounded-full bg-amber-500/20 blur-2xl -z-10 scale-125 sm:scale-150" />
               </motion.div>
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={showContent ? { scale: 1, opacity: 1 } : {}} transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[var(--accent)] text-sm font-medium mb-6">
-                <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}><Sparkles className="w-4 h-4" /></motion.div>
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }} 
+                animate={showContent ? { scale: 1, opacity: 1 } : {}} 
+                transition={{ delay: 0.15, duration: 0.3, ease: "easeOut" }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[var(--accent)] text-sm font-medium mb-6"
+              >
+                <Sparkles className="w-4 h-4" />
                 <span>From Students, For Students</span>
               </motion.div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
@@ -238,16 +284,22 @@ export default function HomePage() {
               <p className="text-base sm:text-lg text-[var(--text-secondary)] max-w-2xl mb-8 sm:mb-10 px-4">
                 Discover donated items available for pickup. Every item shared is a step towards helping a fellow student in need.
               </p>
-              <motion.div variants={containerVariants} initial="hidden" animate={showContent ? "visible" : "hidden"} className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
                 {[{ icon: Calendar, label: settings.pickup_day, color: 'text-[var(--accent)]' },
                   { icon: Clock, label: settings.pickup_time, color: 'text-pink-500' },
                   { icon: MapPin, label: settings.pickup_location, color: 'text-amber-500' }].map((item, i) => (
-                  <motion.div key={i} variants={itemVariants} whileHover={{ scale: 1.05, y: -2 }} className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl glass cursor-default">
-                    <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}><item.icon className={`w-4 h-4 ${item.color}`} /></motion.div>
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={showContent ? { opacity: 1, y: 0 } : {}}
+                    transition={{ delay: 0.2 + (i * 0.05), duration: 0.3, ease: "easeOut" }}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl glass cursor-default"
+                  >
+                    <item.icon className={`w-4 h-4 ${item.color}`} />
                     <span className="font-medium text-[var(--text-primary)] text-xs sm:text-sm">{item.label}</span>
                   </motion.div>
                 ))}
-              </motion.div>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -294,7 +346,7 @@ export default function HomePage() {
           </section>
         )}
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative">
+        <section ref={itemsSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative scroll-mt-20">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
             <div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-1">Available Items</h2>
@@ -323,24 +375,28 @@ export default function HomePage() {
 
 
           {/* Items Grid */}
-          <AnimatePresence mode="wait">
-            {filteredItems.length === 0 ? (
-              <motion.div key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="text-center py-16 sm:py-20 glass rounded-2xl">
-                <motion.div animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-6">
-                  <Package className="w-8 sm:w-10 h-8 sm:h-10 text-[var(--accent)]" />
-                </motion.div>
-                <h3 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] mb-2">
-                  {searchQuery ? 'No items found' : 'No items available'}
-                </h3>
-                <p className="text-[var(--text-secondary)] max-w-sm mx-auto text-sm sm:text-base px-4">
-                  {searchQuery ? 'Try a different search term or browse all categories.' : 'Check back on Thursday for the weekly announcement of new items!'}
-                </p>
+          {filteredItems.length === 0 ? (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16 sm:py-20 glass rounded-2xl">
+              <motion.div animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-6">
+                <Package className="w-8 sm:w-10 h-8 sm:h-10 text-[var(--accent)]" />
               </motion.div>
-            ) : (
-              <motion.div key="items" variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                {filteredItems.map((item, idx) => (
-                  <motion.div key={item.id} variants={itemVariants} whileHover={{ y: -8, scale: 1.02 }} 
-                    onClick={() => setSelectedItem(item)}
+              <h3 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] mb-2">
+                {searchQuery ? 'No items found' : 'No items available'}
+              </h3>
+              <p className="text-[var(--text-secondary)] max-w-sm mx-auto text-sm sm:text-base px-4">
+                {searchQuery ? 'Try a different search term or browse all categories.' : 'Check back on Thursday for the weekly announcement of new items!'}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+              {displayedItems.map((item, idx) => (
+                <motion.div 
+                  key={item.id} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx > 11 ? 0 : idx * 0.05 }}
+                  whileHover={{ y: -8, scale: 1.02 }} 
+                  onClick={() => setSelectedItem(item)}
                     className="card overflow-hidden group cursor-pointer">
                     <div className="h-32 sm:h-40 bg-gradient-to-br from-[var(--accent)]/10 via-pink-500/10 to-amber-500/10 flex items-center justify-center relative overflow-hidden">
                       {item.image_url ? (
@@ -364,7 +420,69 @@ export default function HomePage() {
                     </div>
                   </motion.div>
                 ))}
-              </motion.div>
+              </div>
+            )}
+
+
+          {/* Load More / Show Less Buttons */}
+          {filteredItems.length > 12 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center gap-3 mt-8"
+            >
+              {hasMore && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={loadMore}
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--accent)] to-pink-500 text-white font-semibold shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2"
+                >
+                  <span>Load More</span>
+                  <motion.div
+                    animate={{ y: [0, 3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    ↓
+                  </motion.div>
+                </motion.button>
+              )}
+              {itemsToShow > 12 && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={showLess}
+                  className="px-8 py-3 rounded-xl bg-[var(--bg-tertiary)] border-2 border-[var(--border)] text-[var(--text-primary)] font-semibold hover:bg-[var(--bg-secondary)] transition-colors flex items-center gap-2"
+                >
+                  <span>Show Less</span>
+                  <motion.div
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    ↑
+                  </motion.div>
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+
+          {/* Back to Top Button */}
+          <AnimatePresence>
+            {showBackToTop && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={scrollToTop}
+                className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[var(--accent)] to-pink-500 text-white shadow-2xl hover:shadow-pink-500/50 flex items-center justify-center transition-shadow"
+                title="Back to top"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </motion.button>
             )}
           </AnimatePresence>
         </section>

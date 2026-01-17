@@ -201,13 +201,35 @@ export function DonationModal({ isOpen, donation, onClose, onSuccess }: Donation
                   <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
                     Total Items
                   </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={formData.total_items}
-                    onChange={(e) => setFormData({ ...formData, total_items: parseInt(e.target.value) || 1 })}
-                    className="input"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      value={formData.total_items}
+                      onChange={(e) => setFormData({ ...formData, total_items: parseInt(e.target.value) || 1 })}
+                      className="input pr-8 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, total_items: formData.total_items + 1 })}
+                        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors group"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+                          <path d="M7 3 L11 8 L3 8 Z" fill="currentColor" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, total_items: Math.max(1, formData.total_items - 1) })}
+                        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors group"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+                          <path d="M7 11 L11 6 L3 6 Z" fill="currentColor" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">

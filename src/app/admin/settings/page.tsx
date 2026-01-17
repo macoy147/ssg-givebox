@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, MapPin, Clock, Bell, Loader2 } from 'lucide-react'
-import { getSettings } from '@/lib/supabase/queries'
+import { Save, MapPin, Clock, Bell, Loader2, CheckCircle } from 'lucide-react'
+import { getSettings, updateSettings } from '@/lib/supabase/queries'
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [settings, setSettings] = useState({
     pickup_location: '',
     pickup_day: '',
@@ -29,9 +30,15 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    // TODO: Implement save to Supabase
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    setSaved(false)
+    
+    const success = await updateSettings(settings)
+    
     setSaving(false)
+    if (success) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    }
   }
 
   if (loading) {
@@ -141,14 +148,22 @@ export default function SettingsPage() {
         </div>
 
         {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+          {saved && (
+            <div className="flex items-center gap-2 text-green-500">
+              <CheckCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">Settings saved!</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

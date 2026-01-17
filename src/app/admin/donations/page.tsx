@@ -13,6 +13,7 @@ export default function DonationsPage() {
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null)
+  const [sendingThankYou, setSendingThankYou] = useState<string | null>(null)
 
   const fetchDonations = async () => {
     const data = await getAllDonations()
@@ -34,12 +35,46 @@ export default function DonationsPage() {
   }
 
   const handleMarkThankYou = async (donation: Donation) => {
-    const updated = await updateDonation(donation.id, {
-      thank_you_sent: true,
-      thank_you_sent_at: new Date().toISOString()
-    })
-    if (updated) {
-      setDonations(donations.map(d => d.id === donation.id ? { ...d, thank_you_sent: true, thank_you_sent_at: new Date().toISOString() } : d))
+    if (!donation.donor_email) {
+      alert('No email address provided for this donor.')
+      return
+    }
+
+    setSendingThankYou(donation.id)
+
+    // Send thank you email
+    try {
+      const response = await fetch('/api/thank-donor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: donation.donor_email,
+          donorName: donation.donor_name,
+          itemsDonated: donation.items_donated,
+          totalItems: donation.total_items,
+          donationDate: donation.donation_date
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send email')
+      }
+
+      // Update donation record
+      const updated = await updateDonation(donation.id, {
+        thank_you_sent: true,
+        thank_you_sent_at: new Date().toISOString()
+      })
+      
+      if (updated) {
+        setDonations(donations.map(d => d.id === donation.id ? { ...d, thank_you_sent: true, thank_you_sent_at: new Date().toISOString() } : d))
+        alert('Thank you email sent successfully!')
+      }
+    } catch (error) {
+      console.error('Error sending thank you email:', error)
+      alert('Failed to send thank you email. Please try again.')
+    } finally {
+      setSendingThankYou(null)
     }
   }
 
@@ -112,18 +147,19 @@ export default function DonationsPage() {
 
       {/* Search */}
       <div className="relative max-w-sm">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none z-10" />
         <input
           type="text"
           placeholder="Search donors or items..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="input pl-11 pr-10 w-full"
+          className="input w-full pr-10"
+          style={{ paddingLeft: '44px' }}
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] z-10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -210,10 +246,12 @@ export default function DonationsPage() {
                     ) : (
                       <button
                         onClick={() => handleMarkThankYou(donation)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+                        disabled={sendingThankYou === donation.id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Send thank you email"
                       >
                         <Mail className="w-3 h-3" />
-                        Mark Thanked
+                        {sendingThankYou === donation.id ? 'Sending...' : 'Send Thanks'}
                       </button>
                     )}
                   </div>

@@ -250,6 +250,29 @@ export async function getSettings(): Promise<Record<string, string>> {
   return settings
 }
 
+export async function updateSettings(settings: Record<string, string>): Promise<boolean> {
+  const supabase = createClient()
+  if (!supabase) return false
+
+  try {
+    // Update or insert each setting
+    for (const [key, value] of Object.entries(settings)) {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key, value }, { onConflict: 'key' })
+
+      if (error) {
+        console.error(`Error updating setting ${key}:`, error.message, error.code, error.details)
+        return false
+      }
+    }
+    return true
+  } catch (error) {
+    console.error('Error updating settings:', error)
+    return false
+  }
+}
+
 
 // Subscribers
 export async function addSubscriber(email: string): Promise<Subscriber | null> {

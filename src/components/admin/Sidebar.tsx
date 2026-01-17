@@ -15,9 +15,11 @@ import {
   ExternalLink,
   Sun,
   Moon,
-  Heart
+  Heart,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/context/ThemeContext'
 
@@ -34,6 +36,21 @@ export function Sidebar() {
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Load collapsed state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-collapsed')
+    if (saved) setCollapsed(JSON.parse(saved))
+  }, [])
+
+  const toggleCollapse = () => {
+    const newState = !collapsed
+    setCollapsed(newState)
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(newState))
+    // Dispatch custom event for same-tab updates
+    window.dispatchEvent(new Event('sidebar-toggle'))
+  }
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -48,7 +65,7 @@ export function Sidebar() {
     return pathname === href || pathname.startsWith(href + '/')
   }
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ isCollapsed = false }: { isCollapsed?: boolean }) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-5 border-b border-[var(--border)]">
@@ -58,18 +75,33 @@ export function Sidebar() {
             alt="SSG Logo" 
             width={40} 
             height={40}
-            className="rounded-xl"
+            className="rounded-xl flex-shrink-0"
           />
-          <div>
-            <div className="font-bold text-[var(--text-primary)]">SSG GiveBox</div>
-            <div className="text-xs text-[var(--text-muted)]">Admin Panel</div>
+          <div 
+            className="transition-opacity duration-300 overflow-hidden"
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto'
+            }}
+          >
+            <div className="font-bold text-[var(--text-primary)] whitespace-nowrap">SSG GiveBox</div>
+            <div className="text-xs text-[var(--text-muted)] whitespace-nowrap">Admin Panel</div>
           </div>
         </Link>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
-        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3 px-3">Menu</p>
+        <p 
+          className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3 px-3 transition-opacity duration-300 overflow-hidden"
+          style={{
+            opacity: isCollapsed ? 0 : 1,
+            height: isCollapsed ? 0 : 'auto',
+            marginBottom: isCollapsed ? 0 : '0.75rem'
+          }}
+        >
+          Menu
+        </p>
         <ul className="space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.href, item.exact)
@@ -78,19 +110,29 @@ export function Sidebar() {
                 <Link
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
+                  title={isCollapsed ? item.label : undefined}
                 >
                   <motion.div
-                    whileHover={{ x: 4 }}
+                    whileHover={{ x: isCollapsed ? 0 : 4 }}
                     whileTap={{ scale: 0.98 }}
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                       ${active 
                         ? 'bg-[var(--accent)] text-white shadow-lg' 
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'}
+                      ${isCollapsed ? 'justify-center' : ''}
                     `}
                   >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span 
+                      className="font-medium whitespace-nowrap transition-opacity duration-300 overflow-hidden"
+                      style={{
+                        opacity: isCollapsed ? 0 : 1,
+                        width: isCollapsed ? 0 : 'auto'
+                      }}
+                    >
+                      {item.label}
+                    </span>
                   </motion.div>
                 </Link>
               </li>
@@ -99,14 +141,31 @@ export function Sidebar() {
         </ul>
 
         <div className="mt-6">
-          <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3 px-3">Links</p>
-          <Link href="/" target="_blank">
+          <p 
+            className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3 px-3 transition-opacity duration-300 overflow-hidden"
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              height: isCollapsed ? 0 : 'auto',
+              marginBottom: isCollapsed ? 0 : '0.75rem'
+            }}
+          >
+            Links
+          </p>
+          <Link href="/" target="_blank" title={isCollapsed ? 'View Public Site' : undefined}>
             <motion.div
-              whileHover={{ x: 4 }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"
+              whileHover={{ x: isCollapsed ? 0 : 4 }}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all ${isCollapsed ? 'justify-center' : ''}`}
             >
-              <ExternalLink className="w-5 h-5" />
-              <span className="font-medium">View Public Site</span>
+              <ExternalLink className="w-5 h-5 flex-shrink-0" />
+              <span 
+                className="font-medium whitespace-nowrap transition-opacity duration-300 overflow-hidden"
+                style={{
+                  opacity: isCollapsed ? 0 : 1,
+                  width: isCollapsed ? 0 : 'auto'
+                }}
+              >
+                View Public Site
+              </span>
             </motion.div>
           </Link>
         </div>
@@ -115,23 +174,41 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-[var(--border)] space-y-2">
         <motion.button
-          whileHover={{ x: 4 }}
+          whileHover={{ x: isCollapsed ? 0 : 4 }}
           whileTap={{ scale: 0.98 }}
           onClick={toggleTheme}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all w-full"
+          title={isCollapsed ? (theme === 'light' ? 'Dark Mode' : 'Light Mode') : undefined}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all w-full ${isCollapsed ? 'justify-center' : ''}`}
         >
-          {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-          <span className="font-medium">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+          {theme === 'light' ? <Moon className="w-5 h-5 flex-shrink-0" /> : <Sun className="w-5 h-5 flex-shrink-0" />}
+          <span 
+            className="font-medium whitespace-nowrap transition-opacity duration-300 overflow-hidden"
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto'
+            }}
+          >
+            {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+          </span>
         </motion.button>
         
         <motion.button
-          whileHover={{ x: 4 }}
+          whileHover={{ x: isCollapsed ? 0 : 4 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-all w-full"
+          title={isCollapsed ? 'Logout' : undefined}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-all w-full ${isCollapsed ? 'justify-center' : ''}`}
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <span 
+            className="font-medium whitespace-nowrap transition-opacity duration-300 overflow-hidden"
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto'
+            }}
+          >
+            Logout
+          </span>
         </motion.button>
       </div>
     </div>
@@ -189,9 +266,28 @@ export function Sidebar() {
       </AnimatePresence>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block fixed top-0 left-0 bottom-0 w-64 bg-[var(--bg-primary)] border-r border-[var(--border)] z-30">
-        <SidebarContent />
-      </aside>
+      <motion.aside 
+        animate={{ width: collapsed ? 80 : 256 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="hidden lg:block fixed top-0 left-0 bottom-0 bg-[var(--bg-primary)] border-r border-[var(--border)] z-30"
+      >
+        <SidebarContent isCollapsed={collapsed} />
+        
+        {/* Collapse Toggle Button */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleCollapse}
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-[var(--accent)] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <motion.div
+            animate={{ rotate: collapsed ? 0 : 180 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </motion.div>
+        </motion.button>
+      </motion.aside>
     </>
   )
 }

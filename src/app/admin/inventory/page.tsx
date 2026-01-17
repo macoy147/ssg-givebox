@@ -26,6 +26,7 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [searchExpanded, setSearchExpanded] = useState(false)
 
   const fetchItems = async () => {
     const data = await getAllItems()
@@ -134,7 +135,7 @@ export default function InventoryPage() {
       <SnapshotPanel items={items} />
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex items-center gap-3 mb-6">
         {/* Selection Toggle */}
         <button
           onClick={() => {
@@ -151,24 +152,54 @@ export default function InventoryPage() {
           <span className="text-sm font-medium">Select</span>
         </button>
 
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-11 pr-10 w-full"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        {/* Search Bar - Expands in place */}
+        <div className="relative">
+          <div 
+            className="transition-all duration-300 ease-out"
+            style={{
+              width: searchExpanded || searchQuery ? '320px' : '42px'
+            }}
+          >
+            {!searchExpanded && !searchQuery ? (
+              <button
+                onClick={() => setSearchExpanded(true)}
+                className="p-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                title="Search"
+              >
+                <Search className="w-4 h-4 text-[var(--text-muted)]" />
+              </button>
+            ) : (
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none z-10" />
+                <input
+                  id="admin-search-input"
+                  type="text"
+                  placeholder="Search items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => {
+                    if (!searchQuery) {
+                      setTimeout(() => setSearchExpanded(false), 150)
+                    }
+                  }}
+                  className="input w-full pr-10"
+                  style={{ paddingLeft: '44px' }}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setSearchExpanded(false)
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] z-10"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <select
@@ -302,17 +333,24 @@ export default function InventoryPage() {
                       handleStatusChange(item, e.target.value as 'available' | 'claimed' | 'archived')
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer transition-colors ${
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all hover:scale-105 shadow-lg backdrop-blur-sm ${
                       item.status === 'available' 
-                        ? 'bg-[var(--success)] text-white' 
+                        ? 'bg-green-500/90 text-white border-green-400 hover:bg-green-500' 
                         : item.status === 'claimed'
-                        ? 'bg-gray-500 text-white'
-                        : 'bg-[var(--warning)] text-white'
+                        ? 'bg-blue-500/90 text-white border-blue-400 hover:bg-blue-500'
+                        : 'bg-emerald-500/90 text-white border-emerald-400 hover:bg-emerald-500'
                     }`}
+                    style={{
+                      backgroundImage: item.status === 'available' 
+                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(22, 163, 74, 0.9) 100%)'
+                        : item.status === 'claimed'
+                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%)'
+                        : 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)'
+                    }}
                   >
-                    <option value="available">Available</option>
-                    <option value="claimed">Claimed</option>
-                    <option value="archived">Archived</option>
+                    <option value="available">✓ Available</option>
+                    <option value="claimed">◉ Claimed</option>
+                    <option value="archived">📁 Archived</option>
                   </select>
                 </div>
               </div>
